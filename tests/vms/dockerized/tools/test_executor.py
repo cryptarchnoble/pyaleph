@@ -1,8 +1,10 @@
 
 
-from subprocess import Popen, PIPE
-from pkg_resources import resource_filename, resource_string
 import json
+from subprocess import Popen, PIPE
+
+from pkg_resources import resource_filename, resource_string
+
 
 def test_executor_error_1():
     process = Popen(['python',

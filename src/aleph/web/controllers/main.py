@@ -1,12 +1,12 @@
 import asyncio
 
-import pkg_resources
 import aiohttp_jinja2
+import pkg_resources
 from aiohttp import web
 
-from aleph.web import app
-from aleph import __version__
 import aleph.model
+from aleph import __version__
+from aleph.web import app
 
 
 async def get_status():

@@ -1,7 +1,7 @@
 import pytest
-import json
-import aleph.chains
+
 from aleph.storage import get_message_content
+
 
 @pytest.mark.asyncio
 async def test_get_content_inline():

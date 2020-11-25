@@ -1,5 +1,7 @@
 from pkg_resources import resource_string
+
 from aleph.vms.dockerized.python import DockerizedPythonVM
+
 
 def test_create():
     DockerizedPythonVM.initialize()

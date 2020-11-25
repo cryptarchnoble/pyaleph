@@ -1,7 +1,5 @@
 import pytest
-import hashlib
-import json
-import aleph.chains
+
 from aleph.network import check_message
 
 __author__ = "Moshe Malawach"

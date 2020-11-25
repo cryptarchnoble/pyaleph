@@ -1,8 +1,8 @@
+from unittest.mock import MagicMock
+
 import pytest
 
-import aleph.chains
 from aleph.chains.common import get_verification_buffer, mark_confirmed_data, incoming
-from unittest.mock import MagicMock
 
 
 @pytest.mark.asyncio

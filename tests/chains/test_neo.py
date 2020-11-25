@@ -1,7 +1,7 @@
-import pytest
 import json
 
-import aleph.chains
+import pytest
+
 from aleph.chains.neo import buildNEOVerification, verify_signature
 
 TEST_MESSAGE = r'{"chain":"NEO","channel":"TEST","sender":"AGBwSUtPi6TiMDBV8mLf7MgSyPyRJL2VUu","type":"POST","time":1584057776.473,"item_type":"inline","item_content":"{\"type\":\"chat\",\"address\":\"AGBwSUtPi6TiMDBV8mLf7MgSyPyRJL2VUu\",\"content\":{\"body\":\"haha\"},\"time\":1584057776.473,\"ref\":\"hall\"}","item_hash":"61b62d8f7dda8764431d70279ddf8f354a6dad4fa574db6e8056b3e14d76e81b","signature":"{\"publicKey\":\"0327054981f0fc922e94a08a76a31f3601ba26b6489fb055498ac0ea4b242de49e\",\"salt\":\"28c0eb4ad85540b6aab2ca08603ce8df\",\"data\":\"aabb3e6facf8fe41faf905082c6ad89bdb5ccfd6a147c59cf63a5a8ccbb8fd739a1a3d7542cede0432ca0676a83ff281993d214855417e002db9a1f00a48bd58\"}"}'

@@ -1,8 +1,6 @@
 """
 """
 
-from aleph.model.base import BaseClass
-from pymongo import ASCENDING, DESCENDING, IndexModel
 from gridfs.errors import NoFile
 
 # class Hash(BaseClass):

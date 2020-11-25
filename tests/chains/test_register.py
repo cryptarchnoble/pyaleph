@@ -1,10 +1,11 @@
 import pytest
 
-import aleph.chains
+from aleph.chains import binance, ethereum, nuls, nuls2, neo, substrate, cosmos
 from aleph.chains import register
 from aleph.chains.register import (VERIFIER_REGISTER, INCOMING_WORKERS, OUTGOING_WORKERS,
-                                   register_verifier, register_incoming_worker, register_outgoing_worker)
-from aleph.chains import binance, ethereum, nuls, nuls2, neo, substrate, cosmos
+                                   register_verifier, register_incoming_worker,
+                                   register_outgoing_worker)
+
 
 @pytest.mark.asyncio
 async def test_register_verifier(monkeypatch):
