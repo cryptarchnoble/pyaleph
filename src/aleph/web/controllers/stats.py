@@ -11,7 +11,7 @@ from aleph.web import app
 
 # WARNING: we are storing this in memory... memcached or similar would
 #          be better if volume starts to be too big.
-@cached(ttl=60*120, cache=SimpleMemoryCache, timeout=120)
+@cached(ttl=60 * 120, cache=SimpleMemoryCache, timeout=120)
 # 60*120 seconds or 2 hours minutes, 120 seconds timeout
 async def addresses_stats(check_time=None, address_list=None,
                           output_collection=None):
@@ -23,47 +23,47 @@ async def addresses_stats(check_time=None, address_list=None,
     if address_list is not None and len(address_list):
         if len(address_list) > 1:
             matches.append(
-                {'$match': # {'$or': [
-                    # {'sender': {'$in': address_list}},
-                    {'content.address': {'$in': address_list}}
-                    #]}
-                })
+                {'$match':  # {'$or': [
+                 # {'sender': {'$in': address_list}},
+                     {'content.address': {'$in': address_list}}
+                 # ]}
+                 })
         else:
             matches.append(
-                {'$match': #{'$or': [
-                    # {'sender': address_list[0]},
-                    {'content.address': address_list[0]}
-                    #]}
-                })
+                {'$match':  # {'$or': [
+                 # {'sender': address_list[0]},
+                     {'content.address': address_list[0]}
+                 # ]}
+                 })
 
     aggregate = Message.collection.aggregate(
         matches +
         [
-         {'$group': {'_id': '$content.address',
-                     'messages': {'$sum': 1},
-                     'posts': {'$sum': {"$cond": [
-                         {'$eq': ['$type', 'POST']},
-                         1, 0
+            {'$group': {'_id': '$content.address',
+                        'messages': {'$sum': 1},
+                        'posts': {'$sum': {"$cond": [
+                            {'$eq': ['$type', 'POST']},
+                            1, 0
                         ]}},
-                     'aggregates': {'$sum': {"$cond": [
-                         {'$eq': ['$type', 'AGGREGATE']},
-                         1, 0
+                        'aggregates': {'$sum': {"$cond": [
+                            {'$eq': ['$type', 'AGGREGATE']},
+                            1, 0
                         ]}},
-                     }},
-         {'$project': {
+                        }},
+            {'$project': {
                 '_id': 0,
                 'messages': 1,
                 'posts': 1,
                 'aggregates': 1,
                 'address': '$_id'
             }},
-         {'$sort': {'address': -1}}
-         ], allowDiskUse=(address_list is None))
+            {'$sort': {'address': -1}}
+        ], allowDiskUse=(address_list is None))
     items = [item async for item in aggregate]
     return items
 
 
-@cached(ttl=60*10, cache=SimpleMemoryCache)  # 600 seconds or 10 minutes
+@cached(ttl=60 * 10, cache=SimpleMemoryCache)  # 600 seconds or 10 minutes
 async def addresses_infos(check_time=None, address_list=None):
     address_stats = await addresses_stats(check_time=check_time,
                                           address_list=address_list)
@@ -80,7 +80,7 @@ async def addresses_stats_view(request):
 
     if len(addresses) and (len(addresses) < 200):  # don't use cached values
         check_time = datetime.datetime.now()
-        
+
     if len(addresses) == 1:
         stats = {
             addresses[0]: {
@@ -100,7 +100,7 @@ async def addresses_stats_view(request):
         }
     else:
         stats = await addresses_infos(address_list=addresses,
-                                    check_time=check_time)
+                                      check_time=check_time)
 
     output = {
         'data': stats

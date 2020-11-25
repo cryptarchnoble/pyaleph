@@ -25,9 +25,9 @@ async def sub(topic, base_url=None):
     if base_url is None:
         from aleph.web import app
         base_url = await get_base_url(app['config'])
-        
+
     api = await get_ipfs_api()
-    
+
     async for mvalue in api.pubsub.sub(topic):
         try:
             LOGGER.debug("New message received %r" % mvalue)
@@ -53,7 +53,7 @@ async def incoming_channel(config, topic):
     while True:
         try:
             i = 0
-            #seen_ids = []
+            # seen_ids = []
             tasks: List[Coroutine] = []
             async for message in sub(topic,
                                      base_url=await get_base_url(config)):
@@ -62,7 +62,7 @@ async def incoming_channel(config, topic):
                 tasks.append(incoming(message))
 
                 # await incoming(message, seen_ids=seen_ids)
-                if (i > 1000):
+                if i > 1000:
                     # every 1000 message we check that all tasks finished
                     # and we reset the seen_ids list.
                     for task in tasks:

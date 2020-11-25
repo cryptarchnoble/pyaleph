@@ -9,7 +9,7 @@ from aleph.services.ipfs.pubsub import incoming_channel as incoming_ipfs_channel
 
 LOGGER = logging.getLogger("NETWORK")
 
-MAX_INLINE_SIZE = 200000 # 200kb max inline content size.
+MAX_INLINE_SIZE = 200000  # 200kb max inline content size.
 
 INCOMING_MESSAGE_AUTHORIZED_FIELDS = [
     'item_hash',
@@ -42,10 +42,12 @@ async def incoming_check(ipfs_pubsub_message):
         LOGGER.exception('Received non-json message %r'
                          % ipfs_pubsub_message.get('data', ''))
 
+
 def get_sha256(content):
     if isinstance(content, str):
         content = content.encode('utf-8')
     return sha256(content).hexdigest()
+
 
 async def check_message(message, from_chain=False, from_network=False,
                         trusted=False):
@@ -62,52 +64,52 @@ async def check_message(message, from_chain=False, from_network=False,
     if not isinstance(message['item_hash'], str):
         LOGGER.warning('Unknown hash %s' % message['item_hash'])
         return None
-    
+
     if not isinstance(message['chain'], str):
         LOGGER.warning('Unknown chain %s' % message['chain'])
         return None
-    
+
     if message.get('channel', None) is not None:
         if not isinstance(message.get('channel', None), str):
             LOGGER.warning('Unknown channel %s' % message['channel'])
             return None
-    
+
     if not isinstance(message['sender'], str):
         LOGGER.warning('Unknown sender %s' % message['sender'])
         return None
-    
+
     if not isinstance(message['signature'], str):
         LOGGER.warning('Unknown signature %s' % message['signature'])
         return None
-    
+
     if message.get('item_content', None) is not None:
         if len(message['item_content']) > MAX_INLINE_SIZE:
             LOGGER.warning('Message too long')
             return None
         await asyncio.sleep(0)
-        
+
         if message.get('hash_type', 'sha256') == 'sha256':  # leave the door open.
             if not trusted:
                 loop = asyncio.get_event_loop()
                 item_hash = get_sha256(message['item_content'])
                 # item_hash = await loop.run_in_executor(None, get_sha256, message['item_content'])
                 # item_hash = sha256(message['item_content'].encode('utf-8')).hexdigest()
-                
+
                 if message['item_hash'] != item_hash:
                     LOGGER.warning('Bad hash')
                     return None
         else:
             LOGGER.warning('Unknown hash type %s' % message['hash_type'])
             return None
-        
+
         message['item_type'] = 'inline'
-        
+
     else:
         if len(message['item_hash']) == 46:
             message['item_type'] = 'ipfs'
         if len(message['item_hash']) == 64:
             message['item_type'] = 'storage'
-    
+
     if trusted:
         # only in the case of a message programmatically built here
         # from legacy native chain signing for example (signing offloaded)

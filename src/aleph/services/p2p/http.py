@@ -14,11 +14,12 @@ LOGGER = logging.getLogger('P2P.HTTP')
 
 SESSIONS = dict()
 
+
 async def api_get_request(base_uri, method, timeout=1):
     if timeout not in SESSIONS:
         connector = aiohttp.TCPConnector(limit_per_host=5)
         SESSIONS[timeout] = aiohttp.ClientSession(read_timeout=timeout, connector=connector)
-        
+
     uri = f"{base_uri}/api/v0/{method}"
     try:
         async with SESSIONS[timeout].get(uri) as resp:
@@ -42,16 +43,16 @@ async def get_peer_hash_content(base_uri, item_hash, timeout=1):
         LOGGER.debug(f"can't get hash {item_hash}")
 
     return result
-    
-    
+
+
 async def request_hash(item_hash, timeout=1):
     if singleton.api_servers is None:
         return None
-    
+
     uris = sample(singleton.api_servers, k=len(singleton.api_servers))
     for uri in uris:
         content = await get_peer_hash_content(uri, item_hash, timeout=timeout)
         if content is not None:
             return content
-        
-    return None # Nothing found...
+
+    return None  # Nothing found...

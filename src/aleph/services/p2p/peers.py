@@ -12,7 +12,9 @@ LOGGER = logging.getLogger('P2P.peers')
 
 ALIVE_TOPIC = 'ALIVE'
 
-async def publish_host(address, psub, topic=ALIVE_TOPIC, interests=None, delay=120, peer_type="P2P"):
+
+async def publish_host(address, psub, topic=ALIVE_TOPIC, interests=None, delay=120,
+                       peer_type="P2P"):
     """ Publish our multiaddress regularly, saying we are alive.
     """
     await asyncio.sleep(2)
@@ -32,7 +34,7 @@ async def publish_host(address, psub, topic=ALIVE_TOPIC, interests=None, delay=1
             LOGGER.exception("Can't publish alive message")
         await asyncio.sleep(delay)
 
-    
+
 async def monitor_hosts(psub):
     from aleph.model.p2p import add_peer
     alive_sub = await psub.subscribe(ALIVE_TOPIC)
@@ -47,35 +49,35 @@ async def monitor_hosts(psub):
                 raise ValueError('Bad address')
             if not isinstance(content['peer_type'], str):
                 raise ValueError('Bad peer type')
-            
+
             # TODO: handle interests and save it
-            
+
             if peer_type not in ['P2P', 'HTTP']:
                 raise ValueError('Unsupported peer type %r' % peer_type)
-            
+
             await add_peer(address=content['address'], peer_type=peer_type)
         except Exception:
             LOGGER.exception("Exception in pubsub peers monitoring")
-            
+
 
 async def connect_peer(config, peer):
     info = info_from_p2p_addr(multiaddr.Multiaddr(peer))
     if str(info.peer_id) == str(singleton.host.get_id()):
         # LOGGER.debug("Can't connect to myself.")
         return
-    
+
     if 'streamer' in config.p2p.clients.value:
         if not await singleton.streamer.has_active_streams(info.peer_id):
             # network = singleton.host.get_network()
             # if info.peer_id in network.connections:
             #     await network.close_peer(info.peer_id)
             #     del network[info.peer_id]
-                
+
             await singleton.host.connect(info)
             await singleton.streamer.create_connections(info.peer_id)
     else:
         await singleton.host.connect(info)
-            
+
 
 async def get_peers():
     my_id = singleton.host.get_id()

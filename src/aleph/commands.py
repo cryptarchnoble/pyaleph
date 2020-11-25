@@ -220,16 +220,18 @@ def main(args):
     tasks += connector_tasks(config, outgoing=(not args.no_commit))
     LOGGER.debug("Initialized listeners")
 
-    p1 = Process(target=run_server_coroutine, args=(config_values,
-                                                    config.p2p.host.value,
-                                                    config.p2p.http_port.value,
-                                                    manager and (manager._address, manager._authkey) or None,
-                                                    3))
-    p2 = Process(target=run_server_coroutine, args=(config_values,
-                                                    config.aleph.host.value,
-                                                    config.aleph.port.value,
-                                                    manager and (manager._address, manager._authkey) or None,
-                                                    4))
+    p1 = Process(target=run_server_coroutine,
+                 args=(config_values,
+                       config.p2p.host.value,
+                       config.p2p.http_port.value,
+                       manager and (manager._address, manager._authkey) or None,
+                       3))
+    p2 = Process(target=run_server_coroutine,
+                 args=(config_values,
+                       config.aleph.host.value,
+                       config.aleph.port.value,
+                       manager and (manager._address, manager._authkey) or None,
+                       4))
     p1.start()
     p2.start()
     LOGGER.debug("Started processes")
@@ -247,6 +249,7 @@ def main(args):
     # LOGGER.info('Serving on %s', srv.sockets[0].getsockname())
     LOGGER.debug("Running event loop")
     loop.run_until_complete(asyncio.gather(*tasks))
+
 
 def run():
     """Entry point for console_scripts

@@ -1,10 +1,10 @@
-
 import logging
 
 import aioipfs
 
 API = None
 LOGGER = logging.getLogger("IPFS")
+
 
 async def get_base_url(config):
     return 'http://{}:{}'.format(config.ipfs.host.value,
@@ -29,6 +29,7 @@ async def get_ipfs_api(timeout=60, reset=False):
                                 conns_max=100)
 
     return API
+
 
 async def connect_ipfs_peer(peer):
     api = await get_ipfs_api(timeout=5)

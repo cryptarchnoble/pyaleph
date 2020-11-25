@@ -25,7 +25,7 @@ class Pagination(object):
             pagination_per_page = pagination_param
             pagination_skip = (pagination_page-1)*pagination_param
 
-        return (pagination_page, pagination_per_page, pagination_skip)
+        return pagination_page, pagination_per_page, pagination_skip
 
     def __init__(self, page, per_page, total_count, url_base=None,
                  query_string=None):
@@ -68,12 +68,10 @@ def prepare_date_filters(request, filter_key):
     end_date = int(request.query.get('endDate', 0))
 
     if start_date > 0:
-        date_filters = {}
-        date_filters[filter_key] = {'$gte': start_date}
+        date_filters = {filter_key: {'$gte': start_date}}
 
     if end_date > 0:
-        new_filter = {}
-        new_filter[filter_key] = {'$lte': end_date}
+        new_filter = {filter_key: {'$lte': end_date}}
         if date_filters is not None:
             date_filters = {'$and': [date_filters, new_filter]}
         else:
@@ -89,12 +87,10 @@ def prepare_block_height_filters(request, filter_key):
     end_height = int(request.query.get('endHeight', 0))
 
     if start_height > 0:
-        height_filters = {}
-        height_filters[filter_key] = {'$gte': start_height}
+        height_filters = {filter_key: {'$gte': start_height}}
 
     if end_height > 0:
-        new_filter = {}
-        new_filter[filter_key] = {'$lte': end_height}
+        new_filter = {filter_key: {'$lte': end_height}}
         if height_filters is not None:
             height_filters = {'$and': [height_filters, new_filter]}
         else:

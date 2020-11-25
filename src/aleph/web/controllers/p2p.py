@@ -9,6 +9,7 @@ from aleph.web import app
 
 LOGGER = logging.getLogger('web.controllers.p2p')
 
+
 async def pub_json(request):
     """ Forward the message to P2P host and IPFS server as a pubsub message
     """
@@ -21,8 +22,7 @@ async def pub_json(request):
     except Exception:
         LOGGER.exception("Can't publish on ipfs")
         status = "warning"
-    
-    
+
     try:
         await asyncio.wait_for(
             pub_p2p(data.get('topic'), data.get('data')), .5)
@@ -34,6 +34,7 @@ async def pub_json(request):
         'status': status
     }
     return web.json_response(output)
+
 
 app.router.add_post('/api/v0/ipfs/pubsub/pub', pub_json)
 app.router.add_post('/api/v0/p2p/pubsub/pub', pub_json)

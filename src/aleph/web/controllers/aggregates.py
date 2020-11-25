@@ -28,4 +28,5 @@ async def address_aggregate(request):
     }
     return web.json_response(output)
 
+
 app.router.add_get('/api/v0/aggregates/{address}.json', address_aggregate)

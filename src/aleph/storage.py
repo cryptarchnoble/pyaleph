@@ -18,6 +18,7 @@ from aleph.web import app
 
 LOGGER = logging.getLogger("STORAGE")
 
+
 async def get_message_content(message):
     item_type = message.get('item_type', 'ipfs')
     
@@ -32,18 +33,21 @@ async def get_message_content(message):
         except (json.JSONDecodeError, KeyError):
             try:
                 import json as njson
-                item_content = await loop.run_in_executor(None, njson.loads, message['item_content'])
+                item_content = await loop.run_in_executor(None, njson.loads,
+                                                          message['item_content'])
             except (json.JSONDecodeError, KeyError): 
                 LOGGER.exception("Can't decode JSON")
                 return -1, 0  # never retry, bogus data
         return item_content,  len(message['item_content'])
     else:
         return None, 0  # unknown, could retry later? shouldn't have arrived this far though.
-    
+
+
 def get_sha256(content):
     if isinstance(content, str):
         content = content.encode('utf-8')
     return sha256(content).hexdigest()
+
 
 async def get_hash_content(hash, engine='ipfs', timeout=2,
                            tries=1, use_network=True, use_ipfs=True,
@@ -96,6 +100,7 @@ async def get_hash_content(hash, engine='ipfs', timeout=2,
         
     return content
 
+
 async def get_json(hash, engine='ipfs', timeout=2, tries=1):
     loop = asyncio.get_event_loop()
     content = await get_hash_content(hash, engine=engine,
@@ -118,8 +123,10 @@ async def get_json(hash, engine='ipfs', timeout=2, tries=1):
         
     return content, size
 
+
 async def pin_hash(chash, timeout=2, tries=1):
     return await ipfs_pin_add(chash, timeout=timeout, tries=tries)
+
 
 async def add_json(value, engine='ipfs'):
     # TODO: determine which storage engine to use
@@ -137,6 +144,7 @@ async def add_json(value, engine='ipfs'):
         
     await set_value(chash, content)
     return chash
+
 
 async def add_file(fileobject, filename=None, engine='ipfs'):
     file_hash = None

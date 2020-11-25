@@ -11,35 +11,35 @@ RAW_MSG_PROJECTION.update({'_id': 0})
 class Message(BaseClass):
     COLLECTION = "messages"
     INDEXES = [  # Index("hash", unique=True),
-               IndexModel([("item_hash", ASCENDING),
-                           ("chain", ASCENDING),
-                           ("sender", ASCENDING),
-                           ("type", ASCENDING)], unique=True),
-               IndexModel([("item_hash", ASCENDING)]),  # Content IPFS hash
-               IndexModel([("tx_hash", ASCENDING)]),  # TX Hash (if there is one)
-               IndexModel([("sender", ASCENDING)]),
-               IndexModel([("channel", ASCENDING)]),
-               IndexModel([("content.address", ASCENDING)]),
-               IndexModel([("content.key", ASCENDING)]),
-               IndexModel([("content.ref", ASCENDING)]),
-               IndexModel([("content.type", ASCENDING)]),
-               IndexModel([("content.content.tags", ASCENDING)]),
-            #    IndexModel([("content.time", ASCENDING)]),
-               IndexModel([("time", DESCENDING)]),
-               IndexModel([("time", ASCENDING)]),
-               IndexModel([("type", ASCENDING)]),
-               IndexModel([("type", ASCENDING),
-                           ("content.address", ASCENDING),
-                           ("time", DESCENDING)]),
-               IndexModel([("type", ASCENDING),
-                           ("content.address", ASCENDING),
-                           ("content.key", ASCENDING),
-                           ("time", DESCENDING)]),
-            #    IndexModel([("chain", ASCENDING)]),
-            #    IndexModel([("confirmations.chain", ASCENDING)]),
-            #    IndexModel([("confirmations.height", ASCENDING)]),
-            #    IndexModel([("confirmations.height", DESCENDING)]),
-               IndexModel([("confirmed", DESCENDING)])]
+        IndexModel([("item_hash", ASCENDING),
+                    ("chain", ASCENDING),
+                    ("sender", ASCENDING),
+                    ("type", ASCENDING)], unique=True),
+        IndexModel([("item_hash", ASCENDING)]),  # Content IPFS hash
+        IndexModel([("tx_hash", ASCENDING)]),  # TX Hash (if there is one)
+        IndexModel([("sender", ASCENDING)]),
+        IndexModel([("channel", ASCENDING)]),
+        IndexModel([("content.address", ASCENDING)]),
+        IndexModel([("content.key", ASCENDING)]),
+        IndexModel([("content.ref", ASCENDING)]),
+        IndexModel([("content.type", ASCENDING)]),
+        IndexModel([("content.content.tags", ASCENDING)]),
+        #    IndexModel([("content.time", ASCENDING)]),
+        IndexModel([("time", DESCENDING)]),
+        IndexModel([("time", ASCENDING)]),
+        IndexModel([("type", ASCENDING)]),
+        IndexModel([("type", ASCENDING),
+                    ("content.address", ASCENDING),
+                    ("time", DESCENDING)]),
+        IndexModel([("type", ASCENDING),
+                    ("content.address", ASCENDING),
+                    ("content.key", ASCENDING),
+                    ("time", DESCENDING)]),
+        #    IndexModel([("chain", ASCENDING)]),
+        #    IndexModel([("confirmations.chain", ASCENDING)]),
+        #    IndexModel([("confirmations.height", ASCENDING)]),
+        #    IndexModel([("confirmations.height", DESCENDING)]),
+        IndexModel([("confirmed", DESCENDING)])]
 
     @classmethod
     async def get_unconfirmed_raw(cls, limit=100, for_chain=None):
@@ -65,7 +65,7 @@ async def get_computed_address_aggregates(address_list=None, key_list=None, limi
         {'$limit': limit},
         {'$match': {
             'content.content': {'$type': 3}
-        }},        
+        }},
         {'$project': {
             'time': 1,
             'content.address': 1,
@@ -77,7 +77,7 @@ async def get_computed_address_aggregates(address_list=None, key_list=None, limi
             '_id': {
                 'address': '$content.address',
                 'key': '$content.key'
-                },
+            },
             'content': {
                 '$mergeObjects': '$content.content'
             }
@@ -161,7 +161,7 @@ async def get_merged_posts(filters, sort=None, limit=100,
                                 {'$eq': ['$content.ref', '$$item_hash']},
                                 {'$eq': ['$content.address', '$$address']}
                             ]}
-                         }
+                        }
                     ]
                 }},
                 {'$sort': {'confirmed': 1,

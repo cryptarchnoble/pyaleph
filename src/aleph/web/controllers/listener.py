@@ -7,6 +7,7 @@ from aleph.web import sio
 
 LOGGER = logging.getLogger("LISTENER-SOCKETIO")
 
+
 async def broadcast():
     db = Message.collection
     last_ids = collections.deque(maxlen=100)
@@ -20,12 +21,13 @@ async def broadcast():
 
                 last_ids.append(item['_id'])
                 await sio.emit("message", item, room=item['channel'])
-                i+=1
+                i += 1
             await asyncio.sleep(.1)
 
         except Exception:
             LOGGER.exception("Error processing")
             await asyncio.sleep(.1)
+
 
 @sio.event
 async def join(sid, message):
@@ -42,6 +44,7 @@ async def leave(sid, message):
 @sio.event
 async def disconnect_request(sid):
     await sio.disconnect(sid)
+
 
 @sio.event
 def disconnect(sid):

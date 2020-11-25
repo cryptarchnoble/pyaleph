@@ -3,6 +3,7 @@
 
 from gridfs.errors import NoFile
 
+
 # class Hash(BaseClass):
 #     """Holds information about the chains state."""
 #     COLLECTION = "hashes"
@@ -35,7 +36,8 @@ async def get_value(key):
         return await gridout.read()
     except NoFile:
         return None
-    
+
+
 async def set_value(key, value):
     from aleph.model import fs
     file_id = await fs.upload_from_stream(key,

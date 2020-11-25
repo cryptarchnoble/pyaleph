@@ -28,16 +28,20 @@ async def index(request):
     """
     return await get_status()
 
+
 app.router.add_get('/', index)
+
 
 async def version(request):
     """Version endpoint.
     """
-    
+
     response = web.json_response({
         "version": __version__
-        })
+    })
     return response
+
+
 app.router.add_get('/version', version)
 app.router.add_get('/api/v0/version', version)
 

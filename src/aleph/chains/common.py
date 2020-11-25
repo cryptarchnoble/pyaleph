@@ -19,7 +19,7 @@ async def get_verification_buffer(message):
     """ Returns a serialized string to verify the message integrity
     (this is was it signed)
     """
-    return '{chain}\n{sender}\n{type}\n{item_hash}'.format(**message)\
+    return '{chain}\n{sender}\n{type}\n{item_hash}'.format(**message) \
         .encode('utf-8')
 
 
@@ -29,8 +29,7 @@ async def mark_confirmed_data(chain_name, tx_hash, height):
     """
     return {
         'confirmed': True,
-        'confirmations': [  # TODO: we should add the current one there
-                            # and not replace it.
+        'confirmations': [  # TODO: we should add the current one there and not replace it.
             {'chain': chain_name,
              'height': height,
              'hash': tx_hash}]}
@@ -49,12 +48,12 @@ async def incoming(message, chain_name=None,
     sender = message['sender']
     chain = chain_name
     ids_key = (hash, sender, chain)
-    
+
     if chain_name and tx_hash and height and seen_ids is not None:
         if ids_key in seen_ids.keys():
             if height > seen_ids[ids_key]:
                 return True
-            
+
     filters = {
         'item_hash': hash,
         'chain': message['chain'],
@@ -69,7 +68,7 @@ async def incoming(message, chain_name=None,
         if existing is None or (existing['signature'] != message['signature']):
             # check/sanitize the message if needed
             message = await check_message_fn(message,
-                                            from_chain=(chain_name is not None))
+                                             from_chain=(chain_name is not None))
 
     if message is None:
         return True  # message handled.
@@ -81,17 +80,16 @@ async def incoming(message, chain_name=None,
 
     # we set the incoming chain as default for signature
     message['chain'] = message.get('chain', chain_name)
-    
-    
+
     # if existing is None:
     #     # TODO: verify if search key is ok. do we need an unique key for messages?
     #     existing = await Message.collection.find_one(
     #         filters, projection={'confirmed': 1, 'confirmations': 1, 'time': 1})
-    
+
     if chain_name and tx_hash and height:
         # We are getting a confirmation here
         new_values = await mark_confirmed_data(chain_name, tx_hash, height)
-    
+
         updates = {
             '$set': {
                 'confirmed': True,
@@ -135,7 +133,7 @@ async def incoming(message, chain_name=None,
 
         if chain_name and tx_hash and height:
             # we need to update messages adding the confirmation
-            #await Message.collection.update_many(filters, updates)
+            # await Message.collection.update_many(filters, updates)
             should_commit = True
 
     else:
@@ -150,7 +148,7 @@ async def incoming(message, chain_name=None,
 
         if content is None:
             LOGGER.info("Can't get content of object %r, retrying later."
-                           % hash)
+                        % hash)
             if not retrying:
                 await PendingMessage.collection.insert_one({
                     'message': message,
@@ -160,7 +158,7 @@ async def incoming(message, chain_name=None,
                     )
                 })
             return
-        
+
         if content == -1:
             LOGGER.warning("Can't get content of object %r, won't retry."
                            % hash)
@@ -171,7 +169,7 @@ async def incoming(message, chain_name=None,
 
         if content.get('time', None) is None:
             content['time'] = message['time']
-        
+
         # warning: those handlers can modify message and content in place
         # and return a status. None has to be retried, -1 is discarded, True is
         # handled and kept.
@@ -181,7 +179,7 @@ async def incoming(message, chain_name=None,
         except Exception:
             LOGGER.exception("Error using the message type handler")
             handling_result = None
-        
+
         if handling_result is None:
             LOGGER.info("Message type handler has failed, retrying later.")
             if not retrying:
@@ -193,14 +191,14 @@ async def incoming(message, chain_name=None,
                     )
                 })
             return
-        
+
         if handling_result != True:
             LOGGER.warning("Message type handler has failed permanently for "
                            "%r, won't retry." % hash)
             return -1
 
         if not await check_sender_authorization(message, content):
-            LOGGER.warn("Invalid sender for %s" % hash)
+            LOGGER.warning("Invalid sender for %s" % hash)
             return True  # message handled.
 
         if seen_ids is not None:
@@ -223,12 +221,12 @@ async def incoming(message, chain_name=None,
             'signature': message.get('signature')
         }
         should_commit = True
-        #await Message.collection.insert_one(message)
+        # await Message.collection.insert_one(message)
 
         # since it's on-chain, we need to keep that content.
         # if message['item_type'] == 'ipfs' and app['config'].ipfs.enabled.value:
         #     LOGGER.debug("Pining hash %s" % hash)
-            # await pin_hash(hash)
+        # await pin_hash(hash)
 
     if should_commit:
         action = UpdateOne(filters, updates, upsert=True)
@@ -284,7 +282,7 @@ async def get_chaindata_messages(chaindata, context, seen_ids=None):
                         % context)
             messages = -1
         return messages
-    
+
     if protocol == 'aleph-offchain' and version == 1:
         if seen_ids is not None:
             if chaindata['content'] in seen_ids:

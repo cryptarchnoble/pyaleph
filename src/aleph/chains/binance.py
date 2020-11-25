@@ -115,7 +115,7 @@ async def request_transactions(config, client, start_time):
                        "height": tx['blockHeight'],
                        "time": tx_time,
                        "publisher": tx["fromAddr"]}
-            yield (jdata, context)
+            yield jdata, context
 
         except json.JSONDecodeError:
             # if it's not valid json, just ignore it...
@@ -124,6 +124,7 @@ async def request_transactions(config, client, start_time):
 
     if last_time:
         await Chain.set_last_time(CHAIN_NAME, last_time)
+
 
 async def check_incoming(config):
     last_stored_time = await Chain.get_last_time(CHAIN_NAME)
@@ -139,7 +140,7 @@ async def check_incoming(config):
         j = 0
         
         async for jdata, context in request_transactions(config, client,
-                                              last_stored_time):
+                                                         last_stored_time):
             
             await incoming_chaindata(jdata, context)
             await Chain.set_last_time(
@@ -147,7 +148,7 @@ async def check_incoming(config):
                 datetime.fromtimestamp(context['time'], tz=pytz.utc))
             
         # print(i)
-        if (i < 10):  # if there was less than 10 items, not a busy time
+        if i < 10:  # if there was less than 10 items, not a busy time
             await asyncio.sleep(2)
 
 
@@ -174,6 +175,7 @@ def prepare_transfer_tx(wallet, target_addr, memo_bytes):
     )
     return tx
 
+
 async def binance_packer(config):
     loop = asyncio.get_event_loop()
     # TODO: testnet perhaps? When we get testnet coins.
@@ -190,7 +192,7 @@ async def binance_packer(config):
 
     i = 0
     while True:
-        if (i >= 100):
+        if i >= 100:
             try:
                 await loop.run_in_executor(None, wallet.reload_account_sequence)
             except KeyError:

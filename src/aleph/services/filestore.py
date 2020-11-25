@@ -15,6 +15,7 @@ hashes_db = None
 
 LOGGER = logging.getLogger('filestore')
 
+
 def init_store(config):
     """ Only called if using rocksdb for now.
     """
@@ -35,7 +36,8 @@ def init_store(config):
     # print(os.getpid(), hashes_db)
     # hashes_db = rocksdb.DB(os.path.join(config.storage.folder.value, HASHES_STORAGE),
     #                        rocksdb.Options(create_if_missing=True))
-    
+
+
 def __get_value(key):
     try:
         with STORE_LOCK:
@@ -43,8 +45,10 @@ def __get_value(key):
     except Exception:
         LOGGER.exception("Can't get key %r" % key)
         return None
-    
+
+
 _get_value = __get_value
+
 
 def __set_value(key, value):
     try:
@@ -52,9 +56,11 @@ def __set_value(key, value):
             return hashes_db.put(key, value)
     except Exception:
         LOGGER.exception("Can't write key %r" % key)
-        
+
+
 _set_value = __set_value
-    
+
+
 async def get_value(key, in_executor=True):
     # print(os.getpid(), hashes_db)
     # if not isinstance(key, bytes):
@@ -63,20 +69,20 @@ async def get_value(key, in_executor=True):
     #     else:
     #         raise ValueError('Bad input key (bytes or string only)') 
     engine = app['config'].storage.engine.value
-    
+
     if engine == 'rocksdb':
         if not isinstance(key, bytes):
             if isinstance(key, str):
                 key = key.encode('utf-8')
             else:
-                raise ValueError('Bad input key (bytes or string only)') 
-            
+                raise ValueError('Bad input key (bytes or string only)')
+
         if in_executor:
             loop = asyncio.get_event_loop()
             return await loop.run_in_executor(None, _get_value, key)
         else:
             return _get_value(key)
-        
+
     elif engine == 'mongodb':
         if not isinstance(key, str):
             if isinstance(key, bytes):
@@ -84,30 +90,30 @@ async def get_value(key, in_executor=True):
             else:
                 raise ValueError('Bad input key (bytes or string only)')
         return await hashes.get_value(key)
-        
+
 
 async def set_value(key, value, in_executor=True):
     engine = app['config'].storage.engine.value
-            
+
     if not isinstance(value, bytes):
         if isinstance(value, str):
             value = value.encode('utf-8')
         else:
             raise ValueError('Bad input value (bytes or string only)')
-        
+
     if engine == 'rocksdb':
         if not isinstance(key, bytes):
             if isinstance(key, str):
                 key = key.encode('utf-8')
             else:
                 raise ValueError('Bad input key (bytes or string only)')
-        
+
         if in_executor:
             loop = asyncio.get_event_loop()
             return await loop.run_in_executor(None, _set_value, key, value)
         else:
             return _set_value(key, value)
-        
+
     elif engine == 'mongodb':
         if not isinstance(key, str):
             if isinstance(key, bytes):

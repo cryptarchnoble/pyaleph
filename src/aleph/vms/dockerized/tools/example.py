@@ -43,7 +43,7 @@ class SmartContract:
         # it overwrites the current allowance with _value.
         assert len(spender) <= 40, "Address too long"
         assert tokens > 0, "Amount should be positive"
-        
+
         if msg['sender'] not in self.allowed:
             self.allowed[msg['sender']] = {}
 

@@ -35,9 +35,9 @@ async def verify_signature(message):
     verification = await get_verification_buffer(message)
 
     message_hash = await loop.run_in_executor(
-            None,
-            functools.partial(encode_defunct,
-                              text=verification.decode('utf-8')))
+        None,
+        functools.partial(encode_defunct,
+                          text=verification.decode('utf-8')))
     # message_hash = encode_defunct(text=verification.decode('utf-8'))
     # await asyncio.sleep(0)
     verified = False
@@ -68,6 +68,7 @@ async def verify_signature(message):
         verified = False
 
     return verified
+
 
 register_verifier(CHAIN_NAME, verify_signature)
 
@@ -117,7 +118,7 @@ async def get_logs_query(web3, contract, start_height, end_height):
 async def get_logs(config, web3, contract, start_height):
     try:
         logs = get_logs_query(web3, contract,
-                              start_height+1, 'latest')
+                              start_height + 1, 'latest')
         async for log in logs:
             yield log
     except ValueError as e:
@@ -126,7 +127,7 @@ async def get_logs(config, web3, contract, start_height):
             return
 
         last_block = web3.eth.blockNumber
-        if (start_height < config.ethereum.start_height.value):
+        if start_height < config.ethereum.start_height.value:
             start_height = config.ethereum.start_height.value
 
         end_height = start_height + 1000
@@ -161,7 +162,7 @@ async def request_transactions(config, web3, contract, abi, start_height):
     seen_ids = []
     loop = asyncio.get_event_loop()
 
-    logs = get_logs(config, web3, contract, start_height+1)
+    logs = get_logs(config, web3, contract, start_height + 1)
 
     async for log in logs:
         event_data = await loop.run_in_executor(None, get_event_data,
@@ -174,8 +175,8 @@ async def request_transactions(config, web3, contract, abi, start_height):
         timestamp = event_data.args.timestamp
 
         last_height = event_data.blockNumber
-        #block = await loop.run_in_executor(None, web3.eth.getBlock, event_data.blockNumber)
-        #timestamp = block.timestamp
+        # block = await loop.run_in_executor(None, web3.eth.getBlock, event_data.blockNumber)
+        # timestamp = block.timestamp
 
         message = event_data.args.message
         try:
@@ -185,7 +186,7 @@ async def request_transactions(config, web3, contract, abi, start_height):
                        "time": timestamp,
                        "height": event_data.blockNumber,
                        "publisher": publisher}
-            yield (jdata, context)
+            yield jdata, context
 
         except json.JSONDecodeError:
             # if it's not valid json, just ignore it...
@@ -215,7 +216,7 @@ async def check_incoming(config):
     while True:
         last_stored_height = await get_last_height()
         async for jdata, context in request_transactions(config, web3, contract,
-                                              abi, last_stored_height):
+                                                         abi, last_stored_height):
             await incoming_chaindata(jdata, context)
         await asyncio.sleep(10)
 
@@ -230,6 +231,7 @@ async def ethereum_incoming_worker(config):
                 LOGGER.exception("ERROR, relaunching incoming in 10 seconds")
                 await asyncio.sleep(10)
 
+
 register_incoming_worker(CHAIN_NAME, ethereum_incoming_worker)
 
 
@@ -237,10 +239,10 @@ def broadcast_content(config, contract, web3, account,
                       gas_price, nonce, content):
     # content = json.dumps(content)
     tx = contract.functions.doEmit(content).buildTransaction({
-            'chainId': config.ethereum.chain_id.value,
-            'gasPrice': gas_price,
-            'nonce': nonce,
-            })
+        'chainId': config.ethereum.chain_id.value,
+        'gasPrice': gas_price,
+        'nonce': nonce,
+    })
     signed_tx = account.signTransaction(tx)
     return web3.eth.sendRawTransaction(signed_tx.rawTransaction)
 
@@ -260,10 +262,10 @@ async def ethereum_packer(config):
     gas_price = web3.eth.generateGasPrice()
     while True:
         if (await pending_txs_count(chain=CHAIN_NAME)) \
-           or (await pending_messages_count(source_chain=CHAIN_NAME)):
+                or (await pending_messages_count(source_chain=CHAIN_NAME)):
             await asyncio.sleep(30)
             continue
-        
+
         if i >= 100:
             await asyncio.sleep(30)  # wait three (!!) blocks
             gas_price = web3.eth.generateGasPrice()
@@ -274,8 +276,8 @@ async def ethereum_packer(config):
 
         messages = [message async for message
                     in (await Message.get_unconfirmed_raw(
-                            limit=10000,
-                            for_chain=CHAIN_NAME))]
+                limit=10000,
+                for_chain=CHAIN_NAME))]
 
         if len(messages):
             content = await get_chaindata(messages)
@@ -298,6 +300,7 @@ async def ethereum_outgoing_worker(config):
             except Exception:
                 LOGGER.exception("ERROR, relaunching outgoing in 10 seconds")
                 await asyncio.sleep(10)
+
 
 register_outgoing_worker(CHAIN_NAME, ethereum_outgoing_worker)
 

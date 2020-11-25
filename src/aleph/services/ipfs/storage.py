@@ -10,6 +10,7 @@ from .common import get_ipfs_api, get_base_url
 
 LOGGER = logging.getLogger("IPFS.STORAGE")
 
+
 async def get_ipfs_content(hash, timeout=1, tries=1):
     try_count = 0
     result = None
@@ -17,23 +18,24 @@ async def get_ipfs_content(hash, timeout=1, tries=1):
         try_count += 1
         try:
             api = await get_ipfs_api(timeout=5)
-            result = await asyncio.wait_for(api.cat(hash, length=1024*1024*5), 5)
+            result = await asyncio.wait_for(api.cat(hash, length=1024 * 1024 * 5), 5)
         except aioipfs.APIError:
             result = None
             await asyncio.sleep(.5)
             continue
-        except (asyncio.TimeoutError):
+        except asyncio.TimeoutError:
             result = None
             await asyncio.sleep(.5)
         except (concurrent.futures.CancelledError,
                 aiohttp.client_exceptions.ClientConnectorError):
             try_count -= 1  # do not count as a try.
             await asyncio.sleep(.1)
-            
+
     if isinstance(result, str):
         result = result.encode('utf-8')
 
     return result
+
 
 async def get_json(hash, timeout=1, tries=1):
     result = await get_ipfs_content(hash, timeout=timeout, tries=tries)
@@ -49,6 +51,7 @@ async def get_json(hash, timeout=1, tries=1):
             LOGGER.exception("Can't decode JSON")
             result = -1  # never retry, bogus data
     return result
+
 
 async def add_json(value):
     # loop = asyncio.get_event_loop()

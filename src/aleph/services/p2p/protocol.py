@@ -29,6 +29,7 @@ HELLO_PACKET = {
 
 CONNECT_LOCK = asyncio.Lock()
 
+
 class AlephProtocol(INotifee):
     def __init__(self, host, streams_per_host=5):
         self.host = host
@@ -36,29 +37,30 @@ class AlephProtocol(INotifee):
         self.host.get_network().register_notifee(self)
         self.host.set_stream_handler(PROTOCOL_ID, self.stream_handler)
         self.peers = dict()
-        
+
     async def stream_handler(self, stream: INetStream) -> None:
         asyncio.ensure_future(self.read_data(stream))
-    
+
     async def read_data(self, stream: INetStream) -> None:
         from aleph.storage import get_hash_content
         while True:
             read_bytes = await stream.read(MAX_READ_LEN)
             if read_bytes is not None:
                 result = {'status': 'error',
-                        'reason': 'unknown'}
+                          'reason': 'unknown'}
                 try:
                     read_string = read_bytes.decode('utf-8')
                     message_json = json.loads(read_string)
                     if message_json['command'] == 'hash_content':
-                        value = await get_hash_content(message_json['hash'], use_network=False, timeout=1)
+                        value = await get_hash_content(message_json['hash'], use_network=False,
+                                                       timeout=1)
                         if value is not None and value != -1:
                             result = {'status': 'success',
-                                    'hash': message_json['hash'],
-                                    'content': base64.encodebytes(value).decode('utf-8')}
+                                      'hash': message_json['hash'],
+                                      'content': base64.encodebytes(value).decode('utf-8')}
                         else:
                             result = {'status': 'success',
-                                    'content': None}
+                                      'content': None}
                     elif message_json['command'] == 'get_message':
                         result = {'status': 'error',
                                   'reason': 'not implemented'}
@@ -72,13 +74,13 @@ class AlephProtocol(INotifee):
                                   }}
                     else:
                         result = {'status': 'error',
-                                'reason': 'unknown command'}
+                                  'reason': 'unknown command'}
                     LOGGER.debug(f"received {read_string}")
                 except Exception as e:
                     result = {'status': 'error',
-                            'reason': repr(e)}
+                              'reason': repr(e)}
                 await stream.write(json.dumps(result).encode('utf-8'))
-                
+
     async def make_request(self, request_structure):
         streams = [(peer, item) for peer, sublist in self.peers.items() for item in sublist]
         random.shuffle(streams)
@@ -96,16 +98,16 @@ class AlephProtocol(INotifee):
                             except json.JSONDecodeError:
                                 value = None
                                 continue
-                                
+
                             if value.get('content') is None:
                                 # remove all streams from that peer, ask to the others.
                                 for speer, info in list(streams):
                                     if speer == peer:
                                         streams.remove((speer, info))
                                 break
-                                
+
                             return value
-                        except (StreamError):
+                        except StreamError:
                             # let's delete this stream so it gets recreated next time
                             # await stream.close()
                             await stream.reset()
@@ -116,10 +118,10 @@ class AlephProtocol(INotifee):
                                 pass
                             LOGGER.debug("Can't request hash...")
                 await asyncio.sleep(0)
-                
+
             if not len(streams):
                 return
-    
+
     async def request_hash(self, item_hash):
         # this should be done better, finding best peers to query from.
         query = {
@@ -132,11 +134,11 @@ class AlephProtocol(INotifee):
             return base64.decodebytes(item['content'].encode('utf-8'))
         else:
             LOGGER.debug(f"can't get hash {item_hash}")
-                
+
     async def _handle_new_peer(self, peer_id) -> None:
         await self.create_connections(peer_id)
         LOGGER.debug("added new peer %s", peer_id)
-        
+
     async def create_connections(self, peer_id):
         peer_streams = self.peers.get(peer_id, list())
         for i in range(self.streams_per_host - len(peer_streams)):
@@ -145,20 +147,19 @@ class AlephProtocol(INotifee):
             except SwarmException as error:
                 LOGGER.debug("fail to add new peer %s, error %s", peer_id, error)
                 return
-            
+
             try:
                 await stream.write(json.dumps(HELLO_PACKET).encode('utf-8'))
                 await stream.read(MAX_READ_LEN)
             except Exception as error:
                 LOGGER.debug("fail to add new peer %s, error %s", peer_id, error)
                 return
-            
+
             peer_streams.append((stream, asyncio.Semaphore(1)))
             # await asyncio.sleep(.1)
-        
+
         self.peers[peer_id] = peer_streams
-        
-        
+
     async def opened_stream(self, network, stream) -> None:
         pass
 
@@ -172,10 +173,9 @@ class AlephProtocol(INotifee):
         :param network: network the connection was opened on
         :param conn: connection that was opened
         """
-        #await self.initiator_peers_queue.put(conn.muxed_conn.peer_id)
+        # await self.initiator_peers_queue.put(conn.muxed_conn.peer_id)
         peer_id = conn.muxed_conn.peer_id
         asyncio.ensure_future(self._handle_new_peer(peer_id))
-        
 
     async def disconnected(self, network, conn) -> None:
         pass
@@ -185,11 +185,12 @@ class AlephProtocol(INotifee):
 
     async def listen_close(self, network, multiaddr) -> None:
         pass
-    
+
     async def has_active_streams(self, peer_id):
         if peer_id not in self.peers:
             return False
         return bool(len(self.peers[peer_id]))
+
 
 async def incoming_channel(config, topic):
     from aleph.chains.common import incoming
@@ -207,13 +208,13 @@ async def incoming_channel(config, topic):
                     message = await incoming_check(mvalue)
                     if message is None:
                         continue
-                    
+
                     LOGGER.debug("New message %r" % message)
                     i += 1
                     tasks.append(incoming(message))
 
                     # await incoming(message, seen_ids=seen_ids)
-                    if (i > 1000):
+                    if i > 1000:
                         # every 1000 message we check that all tasks finished
                         # and we reset the seen_ids list.
                         for task in tasks:
@@ -232,6 +233,3 @@ async def request_hash(item_hash):
         return await singleton.streamer.request_hash(item_hash)
     else:
         return None
-
-        
-

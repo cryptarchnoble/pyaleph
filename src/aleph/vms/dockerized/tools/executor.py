@@ -1,4 +1,3 @@
-
 import builtins
 import json
 import select
@@ -12,6 +11,7 @@ def execute(msg):
     byte_code = compile(msg['code'], '<smart-contract>', 'exec')
     exec(byte_code, globals(), locs)
     return locs
+
 
 def do_create(payload):
     try:
@@ -29,7 +29,8 @@ def do_create(payload):
     except Exception as e:
         return {'error': repr(e), 'error_step': 'call',
                 'traceback': traceback.format_exc(), 'result': None}
-    
+
+
 def do_call(payload):
     try:
         locs = execute(payload)
@@ -49,6 +50,7 @@ def do_call(payload):
         return {'error': repr(e), 'error_step': 'call',
                 'traceback': traceback.format_exc(), 'result': None}
 
+
 def handle(line):
     try:
         payload = json.loads(line)
@@ -64,6 +66,7 @@ def handle(line):
                 'result': None}
     return resp
 
+
 if __name__ == "__main__":
     # value = sys.stdin.readline()
     # sys.stdout.write(value)
@@ -75,5 +78,5 @@ if __name__ == "__main__":
         if line:
             resp = handle(line)
             print(json.dumps(resp))
-        else: # an empty line means stdin has been closed
+        else:  # an empty line means stdin has been closed
             exit(0)

@@ -25,9 +25,8 @@ class Chain(BaseClass):
     @classmethod
     async def set_last_height(cls, chain, height):
         await cls.collection.update_one({'name': chain},
-                                        {'$currentDate': {
-                                                'last_update': True
-                                            },
+                                        {
+                                            '$currentDate': {'last_update': True},
                                             '$set': {"last_commited_height": height}
                                         },
                                         upsert=True)
@@ -45,9 +44,8 @@ class Chain(BaseClass):
     @classmethod
     async def set_last_time(cls, chain, stime):
         await cls.collection.update_one({'name': chain},
-                                        {'$currentDate': {
-                                            'last_update': True
-                                         },
-                                         '$set': {"last_commited_time": stime}
-                                         },
+                                        {
+                                            '$currentDate': {'last_update': True},
+                                            '$set': {"last_commited_time": stime}
+                                        },
                                         upsert=True)
