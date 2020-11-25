@@ -18,15 +18,15 @@ db = None
 fs = None
 
 
-def init_db(config, ensure_indexes=True):
+def init_mongodb(uri, database, ensure_indexes=True):
     global connection, db, fs
-    connection = AsyncIOMotorClient(config.mongodb.uri.value,
+    connection = AsyncIOMotorClient(uri,
                                     tz_aware=True)
-    db = connection[config.mongodb.database.value]
+    db = connection[database]
     fs = AsyncIOMotorGridFSBucket(db)
-    sync_connection = MongoClient(config.mongodb.uri.value,
+    sync_connection = MongoClient(uri,
                                   tz_aware=True)
-    sync_db = sync_connection[config.mongodb.database.value]
+    sync_db = sync_connection[database]
 
     if ensure_indexes:
         LOGGER.info('Inserting indexes')
@@ -41,3 +41,9 @@ def init_db(config, ensure_indexes=True):
         Peer.ensure_indexes(sync_db)
         # from aleph.model.hashes import Hash
         # Hash.ensure_indexes(sync_db)
+
+
+def init_db(config, ensure_indexes=True):
+    init_mongodb(uri=config.mongodb.uri.value,
+                 database=config.mongodb.database.value,
+                 ensure_indexes=ensure_indexes)

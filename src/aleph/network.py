@@ -1,3 +1,6 @@
+import urllib.parse
+from typing import Coroutine, List
+
 import aiohttp
 import json
 import asyncio
@@ -38,8 +41,15 @@ async def incoming_check(ipfs_pubsub_message):
         message = await check_message(message, from_network=True)
         return message
     except json.JSONDecodeError:
-        LOGGER.exception('Received non-json message %r'
-                         % ipfs_pubsub_message.get('data', ''))
+        try:
+            data = urllib.parse.unquote(ipfs_pubsub_message.get('data', b'').decode())
+            message = json.loads(data)
+            LOGGER.debug("New message! %r" % message)
+            message = await check_message(message, from_network=True)
+            return message
+        except json.JSONDecodeError:
+            LOGGER.exception('Received non-json message %r'
+                             % ipfs_pubsub_message.get('data', ''))
 
 def get_sha256(content):
     if isinstance(content, str):
