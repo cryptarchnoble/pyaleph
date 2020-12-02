@@ -23,8 +23,11 @@ async def broadcast():
                 i+=1
             await asyncio.sleep(.1)
 
-        except Exception:
+        except Exception as e:
             LOGGER.exception("Error processing")
+            sentry_sdk.capture_exception(e)
+            sentry_sdk.flush()
+            raise
             await asyncio.sleep(.1)
 
 @sio.event

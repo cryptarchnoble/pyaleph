@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+import sentry_sdk
 from aiohttp import web
 
 from aleph.services.ipfs.pubsub import pub as pub_ipfs
@@ -18,16 +19,22 @@ async def pub_json(request):
         if app['config'].ipfs.enabled.value:
             await asyncio.wait_for(
                 pub_ipfs(data.get('topic'), data.get('data')), .2)
-    except Exception:
+    except Exception as e:
         LOGGER.exception("Can't publish on ipfs")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
         status = "warning"
     
     
     try:
         await asyncio.wait_for(
             pub_p2p(data.get('topic'), data.get('data')), .5)
-    except Exception:
+    except Exception as e:
         LOGGER.exception("Can't publish on p2p")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
         status = "warning"
 
     output = {

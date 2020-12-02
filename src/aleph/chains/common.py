@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 
+import sentry_sdk
 from pymongo import UpdateOne
 
 from aleph.handlers.register import handle_incoming_message
@@ -144,8 +145,11 @@ async def incoming(message, chain_name=None,
 
         try:
             content, size = await get_message_content(message)
-        except Exception:
+        except Exception as e:
             LOGGER.exception("Can't get content of object %r" % hash)
+            sentry_sdk.capture_exception(e)
+            sentry_sdk.flush()
+            raise
             content = None
 
         if content is None:
@@ -178,8 +182,11 @@ async def incoming(message, chain_name=None,
         # TODO: change this, it's messy.
         try:
             handling_result = await handle_incoming_message(message, content)
-        except Exception:
+        except Exception as e:
             LOGGER.exception("Error using the message type handler")
+            sentry_sdk.capture_exception(e)
+            sentry_sdk.flush()
+            raise
             handling_result = None
         
         if handling_result is None:
@@ -294,9 +301,12 @@ async def get_chaindata_messages(chaindata, context, seen_ids=None):
                 seen_ids.append(chaindata['content'])
         try:
             content, size = await get_json(chaindata['content'], timeout=10)
-        except Exception:
+        except Exception as e:
             LOGGER.exception("Can't get content of offchain object %r"
                              % chaindata['content'])
+            sentry_sdk.capture_exception(e)
+            sentry_sdk.flush()
+            raise
             return None
         if content is None:
             return None
@@ -327,7 +337,10 @@ async def incoming_chaindata(content, context):
 async def join_tasks(tasks, seen_ids):
     try:
         await asyncio.gather(*tasks)
-    except Exception:
+    except Exception as e:
         LOGGER.exception("error in incoming task")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
     # seen_ids.clear()
     tasks.clear()

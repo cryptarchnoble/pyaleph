@@ -38,7 +38,10 @@ async def sub(topic, base_url=None):
             if message is not None:
                 yield message
 
-        except Exception:
+        except Exception as e:
+            sentry_sdk.capture_exception(e)
+            sentry_sdk.flush()
+            raise
             LOGGER.exception("Error handling message")
 
 

@@ -4,6 +4,7 @@ import json
 import logging
 
 import pkg_resources
+import sentry_sdk
 from eth_account import Account
 from eth_account.messages import encode_defunct
 from hexbytes import HexBytes
@@ -65,6 +66,10 @@ async def verify_signature(message):
     except Exception as e:
         LOGGER.exception('Error processing signature for %s'
                          % message['sender'])
+        LOGGER.exception("error in incoming task")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
         verified = False
 
     return verified
@@ -192,9 +197,12 @@ async def request_transactions(config, web3, contract, abi, start_height):
             LOGGER.info("Incoming logic data is not JSON, ignoring. %r"
                         % message)
 
-        except Exception:
+        except Exception as e:
             LOGGER.exception("Can't decode incoming logic data %r"
                              % message)
+            sentry_sdk.capture_exception(e)
+            sentry_sdk.flush()
+            raise
 
         # Since we got no critical exception, save last received object
         # block height to do next requests from there.
@@ -226,8 +234,11 @@ async def ethereum_incoming_worker(config):
             try:
                 await check_incoming(config)
 
-            except Exception:
+            except Exception as e:
                 LOGGER.exception("ERROR, relaunching incoming in 10 seconds")
+                sentry_sdk.capture_exception(e)
+                sentry_sdk.flush()
+                raise
                 await asyncio.sleep(10)
 
 register_incoming_worker(CHAIN_NAME, ethereum_incoming_worker)
@@ -295,8 +306,11 @@ async def ethereum_outgoing_worker(config):
             try:
                 await ethereum_packer(config)
 
-            except Exception:
+            except Exception as e:
                 LOGGER.exception("ERROR, relaunching outgoing in 10 seconds")
+                sentry_sdk.capture_exception(e)
+                sentry_sdk.flush()
+                raise
                 await asyncio.sleep(10)
 
 register_outgoing_worker(CHAIN_NAME, ethereum_outgoing_worker)

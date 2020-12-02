@@ -4,6 +4,7 @@ import os
 import threading
 
 import rocksdb
+import sentry_sdk
 
 from aleph.model import hashes
 from aleph.web import app
@@ -41,8 +42,11 @@ def __get_value(key):
     try:
         with STORE_LOCK:
             return hashes_db.get(key)
-    except Exception:
+    except Exception as e:
         LOGGER.exception("Can't get key %r" % key)
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
         return None
     
 _get_value = __get_value
@@ -51,9 +55,12 @@ def __set_value(key, value):
     try:
         with STORE_LOCK:
             return hashes_db.put(key, value)
-    except Exception:
+    except Exception as e:
         LOGGER.exception("Can't write key %r" % key)
-        
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
+
 _set_value = __set_value
     
 async def get_value(key, in_executor=True):

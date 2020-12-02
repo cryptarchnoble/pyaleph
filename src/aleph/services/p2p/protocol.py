@@ -5,6 +5,7 @@ import logging
 import random
 from typing import Coroutine, List
 
+import sentry_sdk
 from libp2p.network.exceptions import SwarmException
 from libp2p.network.notifee_interface import INotifee
 from libp2p.network.stream.exceptions import StreamError
@@ -77,6 +78,9 @@ class AlephProtocol(INotifee):
                 except Exception as e:
                     result = {'status': 'error',
                             'reason': repr(e)}
+                    LOGGER.exception("error in incoming task")
+                    sentry_sdk.capture_exception(e)
+                    sentry_sdk.flush()
                 await stream.write(json.dumps(result).encode('utf-8'))
                 
     async def make_request(self, request_structure):
@@ -144,6 +148,9 @@ class AlephProtocol(INotifee):
                 stream: INetStream = await self.host.new_stream(peer_id, [PROTOCOL_ID])
             except SwarmException as error:
                 LOGGER.debug("fail to add new peer %s, error %s", peer_id, error)
+                LOGGER.exception("error in incoming task")
+                sentry_sdk.capture_exception(error)
+                sentry_sdk.flush()
                 return
             
             try:
@@ -151,6 +158,10 @@ class AlephProtocol(INotifee):
                 await stream.read(MAX_READ_LEN)
             except Exception as error:
                 LOGGER.debug("fail to add new peer %s, error %s", peer_id, error)
+                LOGGER.exception("error in incoming task")
+                sentry_sdk.capture_exception(error)
+                sentry_sdk.flush()
+                raise
                 return
             
             peer_streams.append((stream, asyncio.Semaphore(1)))
@@ -223,8 +234,11 @@ async def incoming_channel(config, topic):
                 except:
                     LOGGER.exception("Can't handle message")
 
-        except Exception:
+        except Exception as e:
             LOGGER.exception("Exception in pubsub, reconnecting.")
+            sentry_sdk.capture_exception(e)
+            sentry_sdk.flush()
+            raise
 
 
 async def request_hash(item_hash):

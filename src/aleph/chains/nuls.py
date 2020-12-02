@@ -2,6 +2,7 @@ import asyncio
 import logging
 import struct
 
+import sentry_sdk
 from aleph_client.chains.nuls1 import NulsSignature, hash_from_address, public_key_to_hash, \
     address_from_hash
 
@@ -40,8 +41,11 @@ async def verify_signature(message):
     try:
         result = await loop.run_in_executor(
             None, sig.verify, verification)
-    except Exception:
+    except Exception as e:
         LOGGER.exception("NULS Signature verification error")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
         result = False
     # result = sig.verify(verification)
     return result

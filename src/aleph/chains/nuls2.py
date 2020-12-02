@@ -8,6 +8,7 @@ import time
 from operator import itemgetter
 
 import aiohttp
+import sentry_sdk
 from aiocache import cached, SimpleMemoryCache
 from coincurve import PrivateKey
 from nuls2.api.server import get_server
@@ -45,8 +46,11 @@ async def verify_signature(message):
                                 verification, chain_id=sender_chain_id))
         # address = recover_message_address(sig_raw, verification,
         #                                   chain_id=sender_chain_id)
-    except Exception:
+    except Exception as e:
         LOGGER.exception("NULS Signature verification error")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
         return False
     
     if address != message['sender']:
@@ -186,8 +190,11 @@ async def nuls_incoming_worker(config):
             try:
                 await check_incoming(config)
 
-            except Exception:
+            except Exception as e:
                 LOGGER.exception("ERROR, relaunching incoming in 10 seconds")
+                sentry_sdk.capture_exception(e)
+                sentry_sdk.flush()
+                raise
                 await asyncio.sleep(10)
 
 register_incoming_worker(CHAIN_NAME, nuls_incoming_worker)
@@ -300,8 +307,11 @@ async def nuls2_outgoing_worker(config):
             try:
                 await nuls2_packer(config)
 
-            except Exception:
+            except Exception as e:
                 LOGGER.exception("ERROR, relaunching outgoing in 10 seconds")
+                sentry_sdk.capture_exception(e)
+                sentry_sdk.flush()
+                raise
                 await asyncio.sleep(10)
 
 register_outgoing_worker(CHAIN_NAME, nuls2_outgoing_worker)

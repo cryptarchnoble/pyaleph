@@ -1,6 +1,8 @@
 import asyncio
 import logging
 
+import sentry_sdk
+
 from aleph.model.p2p import get_peers
 from .http import api_get_request
 from .peers import connect_peer
@@ -22,8 +24,11 @@ async def reconnect_p2p_job(config=None):
                 except:
                     LOGGER.debug("Can't reconnect to %s" % peer)
                 
-        except Exception:
+        except Exception as e:
             LOGGER.exception("Error reconnecting to peers")
+            sentry_sdk.capture_exception(e)
+            sentry_sdk.flush()
+            raise
 
         await asyncio.sleep(config.p2p.reconnect_delay.value)
         
@@ -32,8 +37,11 @@ async def check_peer(peers, peer_uri, timeout=1):
         version_info = await api_get_request(peer_uri, "version", timeout=timeout)
         if version_info is not None:
             peers.append(peer_uri)
-    except Exception:
+    except Exception as e:
         LOGGER.exception("Can't contact peer %r" % peer_uri)
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
     
         
 async def tidy_http_peers_job(config=None):
@@ -57,7 +65,10 @@ async def tidy_http_peers_job(config=None):
             await asyncio.gather(*jobs)
             singleton.api_servers = peers
                 
-        except Exception:
+        except Exception as e:
             LOGGER.exception("Error reconnecting to peers")
+            sentry_sdk.capture_exception(e)
+            sentry_sdk.flush()
+            raise
 
         await asyncio.sleep(config.p2p.reconnect_delay.value)

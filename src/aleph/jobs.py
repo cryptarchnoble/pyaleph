@@ -5,6 +5,7 @@ from multiprocessing.managers import SyncManager, RemoteError
 from typing import Coroutine, List
 
 import aioipfs
+import sentry_sdk
 from pymongo import DeleteOne, InsertOne, DeleteMany
 
 from aleph.chains.common import incoming, get_chaindata_messages
@@ -45,8 +46,11 @@ async def handle_pending_message(pending, seen_ids, actions_list, messages_actio
 async def join_pending_message_tasks(tasks, actions_list=None, messages_actions_list=None):
     try:
         await asyncio.gather(*tasks, return_exceptions=True)
-    except Exception:
+    except Exception as e:
         LOGGER.exception("error in incoming task")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
     tasks.clear()
 
     if messages_actions_list is not None and len(messages_actions_list):
@@ -135,8 +139,11 @@ async def retry_messages_task():
     while True:
         try:
             await retry_messages_job()
-        except Exception:
+        except Exception as e:
             LOGGER.exception("Error in pending messages retry job")
+            sentry_sdk.capture_exception(e)
+            sentry_sdk.flush()
+            raise
 
         await asyncio.sleep(5)
         
@@ -177,8 +184,11 @@ async def handle_pending_tx(pending, actions_list):
 async def join_pending_txs_tasks(tasks, actions_list):
     try:
         await asyncio.gather(*tasks, return_exceptions=True)
-    except Exception:
+    except Exception as e:
         LOGGER.exception("error in incoming txs task")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
     tasks.clear()
 
     if len(actions_list):
@@ -221,8 +231,11 @@ async def handle_txs_task():
         try:
             await handle_txs_job()
             await asyncio.sleep(5)
-        except Exception:
+        except Exception as e:
             LOGGER.exception("Error in pending txs job")
+            sentry_sdk.capture_exception(e)
+            sentry_sdk.flush()
+            raise
 
         await asyncio.sleep(0.01)
         
@@ -334,8 +347,11 @@ async def reconnect_ipfs_job(config):
                 except aioipfs.APIError:
                     LOGGER.warning("Can't reconnect to %s" % peer)
                 
-        except Exception:
+        except Exception as e:
             LOGGER.exception("Error reconnecting to peers")
+            sentry_sdk.capture_exception(e)
+            sentry_sdk.flush()
+            raise
 
         await asyncio.sleep(config.ipfs.reconnect_delay.value)
     

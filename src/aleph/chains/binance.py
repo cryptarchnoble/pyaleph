@@ -157,8 +157,11 @@ async def binance_incoming_worker(config):
             try:
                 await check_incoming(config)
 
-            except Exception:
+            except Exception as e:
                 LOGGER.exception("ERROR, relaunching incoming in 10 seconds")
+                sentry_sdk.capture_exception(e)
+                sentry_sdk.flush()
+                raise
                 await asyncio.sleep(10)
 
 register_incoming_worker(CHAIN_NAME, binance_incoming_worker)
@@ -222,8 +225,11 @@ async def binance_outgoing_worker(config):
             try:
                 await binance_packer(config)
 
-            except Exception:
+            except Exception as e:
                 LOGGER.exception("ERROR, relaunching outgoing in 10 seconds")
+                sentry_sdk.capture_exception(e)
+                sentry_sdk.flush()
+                raise
                 await asyncio.sleep(10)
 
 register_outgoing_worker(CHAIN_NAME, binance_outgoing_worker)

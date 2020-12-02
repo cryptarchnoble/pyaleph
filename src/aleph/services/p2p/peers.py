@@ -3,6 +3,7 @@ import json
 import logging
 
 import multiaddr
+import sentry_sdk
 from libp2p.peer.peerinfo import info_from_p2p_addr
 
 from aleph.services.p2p.pubsub import decode_msg
@@ -28,8 +29,11 @@ async def publish_host(address, psub, topic=ALIVE_TOPIC, interests=None, delay=1
         try:
             LOGGER.debug("Publishing alive message on p2p pubsub")
             await psub.publish(topic, msg)
-        except Exception:
+        except Exception as e:
             LOGGER.exception("Can't publish alive message")
+            sentry_sdk.capture_exception(e)
+            sentry_sdk.flush()
+            raise
         await asyncio.sleep(delay)
 
     
@@ -54,8 +58,11 @@ async def monitor_hosts(psub):
                 raise ValueError('Unsupported peer type %r' % peer_type)
             
             await add_peer(address=content['address'], peer_type=peer_type)
-        except Exception:
+        except Exception as e:
             LOGGER.exception("Exception in pubsub peers monitoring")
+            sentry_sdk.capture_exception(e)
+            sentry_sdk.flush()
+            raise
             
 
 async def connect_peer(config, peer):

@@ -1,6 +1,7 @@
 import json
 import logging
 
+import sentry_sdk
 from neo.Core.Cryptography.Crypto import Crypto
 
 from aleph.chains.common import get_verification_buffer
@@ -37,8 +38,11 @@ async def verify_signature(message):
     
     try:
         signature = json.loads(message['signature'])
-    except Exception:
+    except Exception as e:
         LOGGER.exception("NEO Signature deserialization error")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
         return False
     
     try:
@@ -46,8 +50,11 @@ async def verify_signature(message):
             "21" + signature['publicKey'] + "ac"
         )
         address = Crypto.ToAddress(script_hash)
-    except Exception:
+    except Exception as e:
         LOGGER.exception("NEO Signature Key error")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
         return False
     
     if address != message['sender']:
@@ -65,8 +72,11 @@ async def verify_signature(message):
             bytes.fromhex(signature['data']),
             bytes.fromhex(signature['publicKey']),
             unhex=True)
-    except Exception:
+    except Exception as e:
         LOGGER.exception("NULS Signature verification error")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
         result = False
         
     return result

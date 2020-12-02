@@ -4,6 +4,7 @@ import json
 import logging
 
 import ecdsa
+import sentry_sdk
 from cosmospy._wallet import pubkey_to_address
 
 from aleph.chains.common import get_verification_buffer
@@ -53,29 +54,41 @@ async def verify_signature(message):
     
     try:
         signature = json.loads(message['signature'])
-    except Exception:
+    except Exception as e:
         LOGGER.exception("Cosmos signature deserialization error")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
         return False
     
     try:
         if signature.get('pub_key').get('type') != 'tendermint/PubKeySecp256k1':
             LOGGER.warning('Unsupported curve %s' % signature.get('pub_key').get('type'))
-    except Exception:
+    except Exception as e:
         LOGGER.exception("Cosmos signature Key error")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
         return False
     
     
     try:
         pub_key = base64.b64decode(signature.get('pub_key').get('value'))
         hrp = await get_hrp(message['sender'])
-    except Exception:
+    except Exception as e:
         LOGGER.exception("Cosmos key verification error")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
         result = False
         
     try:
         sig_compact = base64.b64decode(signature.get('signature'))
-    except Exception:
+    except Exception as e:
         LOGGER.exception("Cosmos signature deserialization error")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
         result = False
     
     
@@ -90,8 +103,11 @@ async def verify_signature(message):
         verified = vk.verify(sig_compact, verif.encode("utf-8"), hashfunc=hashlib.sha256)
         return verified
     
-    except Exception:
+    except Exception as e:
         LOGGER.exception("Substrate Signature verification error")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
         result = False
     
     return result
