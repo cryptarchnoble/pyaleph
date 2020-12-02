@@ -31,6 +31,8 @@ from aleph import model
 from aleph.services import p2p, filestore
 from setproctitle import setproctitle
 
+import sentry_sdk
+
 __author__ = "Moshe Malawach"
 __copyright__ = "Moshe Malawach"
 __license__ = "mit"
@@ -101,6 +103,13 @@ def parse_args(args):
         type=str,
         default="node-secret.key",
     )
+    parser.add_argument(
+        '--disable-sentry',
+        dest="sentry_disabled",
+        help="Disable Sentry error tracking",
+        action="store_true",
+        default=False,
+    )
     return parser.parse_args(args)
 
 
@@ -140,13 +149,26 @@ async def run_server(host: str, port: int):
     LOGGER.debug("Finished broadcast server")
 
 
-def run_server_coroutine(config_values, host, port, manager, idx):
+def run_server_coroutine(config_values, host, port, manager, idx, enable_sentry: bool = True):
     """Run the server coroutine in a synchronous way.
     Used as target of multiprocessing.Process.
     """
-    loop, tasks = prepare_loop(config_values, manager, idx=idx)
-    loop.run_until_complete(
-        asyncio.gather(*tasks, run_server(host, port)))
+    if enable_sentry:
+        sentry_sdk.init(
+            dsn=config_values['sentry']['dsn'],
+            traces_sample_rate=config_values['sentry']['traces_sample_rate'],
+            ignore_errors=[KeyboardInterrupt],
+        )
+    # Use a try-catch-capture_exception to work with multiprocessing, see
+    # https://github.com/getsentry/raven-python/issues/1110
+    try:
+        loop, tasks = prepare_loop(config_values, manager, idx=idx)
+        loop.run_until_complete(
+            asyncio.gather(*tasks, run_server(host, port)))
+    except Exception as e:
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush()
+        raise
 
 
 def main(args):
@@ -187,7 +209,17 @@ def main(args):
     if args.config_file is not None:
         LOGGER.debug("Loading config file '%s'", args.config_file)
         app['config'].yaml.load(args.config_file)
-        
+
+    if args.sentry_disabled:
+        LOGGER.info("Sentry disabled by CLI arguments")
+    elif app['config'].sentry.dsn.value:
+        sentry_sdk.init(
+            dsn=app['config'].sentry.dsn.value,
+            traces_sample_rate=app['config'].sentry.traces_sample_rate.value,
+            ignore_errors=[KeyboardInterrupt],
+        )
+        LOGGER.info("Sentry enabled")
+
     config_values = config.dump_values()
 
     LOGGER.debug("Initializing database")
@@ -222,16 +254,22 @@ def main(args):
     tasks += connector_tasks(config, outgoing=(not args.no_commit))
     LOGGER.debug("Initialized listeners")
 
-    p1 = Process(target=run_server_coroutine, args=(config_values,
-                                                    config.p2p.host.value,
-                                                    config.p2p.http_port.value,
-                                                    manager and (manager._address, manager._authkey) or None,
-                                                    3))
-    p2 = Process(target=run_server_coroutine, args=(config_values,
-                                                    config.aleph.host.value,
-                                                    config.aleph.port.value,
-                                                    manager and (manager._address, manager._authkey) or None,
-                                                    4))
+    p1 = Process(target=run_server_coroutine, args=(
+        config_values,
+        config.p2p.host.value,
+        config.p2p.http_port.value,
+        manager and (manager._address, manager._authkey) or None,
+        3,
+        args.sentry_disabled is False,
+    ))
+    p2 = Process(target=run_server_coroutine, args=(
+        config_values,
+        config.aleph.host.value,
+        config.aleph.port.value,
+        manager and (manager._address, manager._authkey) or None,
+        4,
+        args.sentry_disabled is False,
+    ))
     p1.start()
     p2.start()
     LOGGER.debug("Started processes")
