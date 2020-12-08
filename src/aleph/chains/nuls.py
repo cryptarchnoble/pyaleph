@@ -14,6 +14,8 @@ from aleph.chains.register import register_verifier
 #     NulsSignature, public_key_to_hash, address_from_hash, hash_from_address,
 #     CHEAP_UNIT_FEE)
 # from nulsexplorer.protocol.transaction import Transaction
+from aleph.utils import run_in_executor
+
 LOGGER = logging.getLogger('chains.nuls')
 CHAIN_NAME = 'NULS'
 
@@ -39,7 +41,7 @@ async def verify_signature(message):
 
     verification = await get_verification_buffer(message)
     try:
-        result = await loop.run_in_executor(
+        result = await run_in_executor(
             None, sig.verify, verification)
     except Exception as e:
         LOGGER.exception("NULS Signature verification error")
