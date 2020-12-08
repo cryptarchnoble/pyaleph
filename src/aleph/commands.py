@@ -18,6 +18,7 @@ from multiprocessing import Process, set_start_method
 from typing import List, Coroutine
 
 from configmanager import Config
+from setproctitle import setproctitle
 
 from aleph import __version__
 from aleph import model
@@ -151,6 +152,7 @@ def run_server_coroutine(config_values, host, port, manager, idx, enable_sentry:
     """Run the server coroutine in a synchronous way.
     Used as target of multiprocessing.Process.
     """
+    setproctitle(f"pyaleph run_server_coroutine port={port}")
     if enable_sentry:
         sentry_sdk.init(
             dsn=config_values['sentry']['dsn'],
@@ -284,6 +286,7 @@ def main(args):
     # srv = loop.run_until_complete(f)
     # LOGGER.info('Serving on %s', srv.sockets[0].getsockname())
     LOGGER.debug("Running event loop")
+    setproctitle("pyaleph main")
     loop.run_until_complete(asyncio.gather(*tasks))
 
 def run():
